@@ -1,4 +1,4 @@
-defmodule ZWave.Command.AssociationTest do
+defmodule ZWave.Command.AssociationReportTest do
   use ExUnit.Case, async: true
 
   alias ZWave.Command.AssociationReport

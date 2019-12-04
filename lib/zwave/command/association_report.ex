@@ -44,7 +44,7 @@ defmodule ZWave.Command.AssociationReport do
   @spec new([command_param]) :: {:ok, t()} | {:error, :max_nodes_supported | :group_identifier}
   def new(params) do
     case validate_params(params) do
-      :ok -> struct(__MODULE__, params)
+      :ok -> {:ok, struct(__MODULE__, params)}
       {:error, _} = error -> error
     end
   end

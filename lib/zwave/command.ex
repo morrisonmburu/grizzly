@@ -211,7 +211,7 @@ defmodule ZWave.Command do
             module = ZWave.Command.Meta.source(meta)
 
             case apply(module, :params_from_binary, [rest]) do
-              {:ok, command_opts} -> apply(module, :new, command_opts)
+              {:ok, command_opts} -> apply(module, :new, [command_opts])
               error -> error
             end
           end

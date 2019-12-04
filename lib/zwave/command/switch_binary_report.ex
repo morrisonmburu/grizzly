@@ -44,6 +44,7 @@ defmodule ZWave.Command.SwitchBinaryReport do
              :duration_required
              | :target_value_required
              | :invalid_duration
+             | :invalid_current_value
              | :current_value_required}
   def new(params) do
     with :ok <- validate_current_value(params),
@@ -87,7 +88,7 @@ defmodule ZWave.Command.SwitchBinaryReport do
     with {:ok, current_value} <- report_value_from_byte(current_value_byte),
          {:ok, target_value} <- report_value_from_byte(target_value_byte),
          {:ok, duration_report} <- ActuatorControl.duration_from_byte(duration_byte, :report) do
-      {:ok, current_value: current_value, target_value: target_value, duration: duration_report}
+      {:ok, [current_value: current_value, target_value: target_value, duration: duration_report]}
     end
   end
 
@@ -102,7 +103,11 @@ defmodule ZWave.Command.SwitchBinaryReport do
   defp report_value_from_byte(_), do: {:error, :invalid_report_value}
 
   defp validate_current_value(params) do
-    Keyword.get(params, :current_value, {:error, :current_value_required})
+    case Keyword.get(params, :current_value) do
+      nil -> {:error, :current_value_required}
+      value when value in [:on, :off, :unknown] -> :ok
+      _value -> {:error, :invalid_current_value}
+    end
   end
 
   defp validate_target_value_and_duration(params) do

@@ -45,14 +45,11 @@ defmodule ZWave.Command.AssociationRemove do
   end
 
   @impl true
-  @spec new([command_param]) :: {:ok, t()} | {:error, :group_identifier_required}
+  @spec new([command_param]) ::
+          {:ok, t()} | {:error, :group_identifier_required | :invalid_group_identifier}
   def new(params) do
-    case validate_group_identifier(params) do
-      :ok ->
-        {:ok, struct(__MODULE__, params)}
-
-      {:error, _} = error ->
-        error
+    with :ok <- validate_group_identifier(params) do
+      {:ok, struct(__MODULE__, params)}
     end
   end
 
@@ -70,6 +67,10 @@ defmodule ZWave.Command.AssociationRemove do
   end
 
   defp validate_group_identifier(params) do
-    Keyword.get(params, :group_identifier, {:error, :group_identifier_required})
+    case Keyword.get(params, :group_identifier) do
+      nil -> {:error, :group_identifier_required}
+      gi when gi in 0x00..0xFF -> :ok
+      _gi -> {:error, :invalid_group_identifier}
+    end
   end
 end
