@@ -73,13 +73,25 @@ defmodule ZWave.Command do
   @type t :: module() | %{__meta__: Meta.t()}
 
   @doc """
+  Create a new command from the `params` provided.
+
+  The callback should do parameter validation before returning `{:ok, command}`
+  or `{:error, reason}
+  """
+  @callback new(params :: keyword()) ::
+              {:ok, ZWave.Serialize.t() | ZWave.Deserialize.t()} | {:error, reason :: any()}
+
+  @doc """
   A callback to wrap the encoding of the command params in the
   `ZWave.Serialize` protocol.
 
   This callback will take the command and return the binary string
   of the encoded params.
+
+  This callback assumed that the params that are part of the command struct
+  were validate as the command was called with `new/1`.
   """
-  @callback params_to_binary(ZWave.Serialize.t()) :: {:ok, binary()} | {:error, any()}
+  @callback params_to_binary(ZWave.Serialize.t()) :: binary()
 
   @doc """
   A callback to wrap the decoding of the command params in the
@@ -90,7 +102,7 @@ defmodule ZWave.Command do
   """
   @callback params_from_binary(ZWave.Deserialize.t()) :: {:ok, keyword()} | {:error, any()}
 
-  @optional_callbacks params_to_binary: 1, params_from_binary: 1
+  @optional_callbacks params_to_binary: 1, params_from_binary: 1, new: 1
 
   defmacro __using__(_) do
     quote do
@@ -188,10 +200,8 @@ defmodule ZWave.Command do
 
             command_class_byte = ZWave.CommandClass.command_class_byte(command_class)
 
-            case apply(module, :params_to_binary, [command]) do
-              {:ok, binary} ->
-                {:ok, <<command_class_byte, command_byte>> <> binary}
-            end
+            params_binary = apply(module, :params_to_binary, [command])
+            {:ok, <<command_class_byte, command_byte>> <> params_binary}
           end
         end
 
@@ -201,7 +211,7 @@ defmodule ZWave.Command do
             module = ZWave.Command.Meta.source(meta)
 
             case apply(module, :params_from_binary, [rest]) do
-              {:ok, command_opts} -> {:ok, struct(command, command_opts)}
+              {:ok, command_opts} -> apply(module, :new, command_opts)
               error -> error
             end
           end

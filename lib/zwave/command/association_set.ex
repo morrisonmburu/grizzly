@@ -26,14 +26,23 @@ defmodule ZWave.Command.AssociationSet do
     command_class(ZWave.CommandClass.Association)
 
     param(:group_identifier)
-    param(:node_ids)
+    param(:node_ids, default: [])
+  end
+
+  @impl true
+  @spec new([command_param]) :: {:ok, t()} | {:error, :group_identifier_required}
+  def new(params) do
+    case Keyword.get(params, :group_identifier) do
+      nil -> {:error, :group_identifier_required}
+      _ -> {:ok, struct(__MODULE__, params)}
+    end
   end
 
   @impl ZWave.Command
-  @spec params_to_binary(t()) :: {:ok, binary()}
+  @spec params_to_binary(t()) :: binary()
   def params_to_binary(%__MODULE__{group_identifier: agi, node_ids: node_ids}) do
     node_ids_bin = :erlang.list_to_binary(node_ids)
-    {:ok, <<agi>> <> node_ids_bin}
+    <<agi>> <> node_ids_bin
   end
 
   @impl ZWave.Command

@@ -27,9 +27,21 @@ defmodule ZWave.Command.AssociationGroupingsReport do
     param(:supported_groupings)
   end
 
+  @impl true
+  @spec new([command_param]) :: {:ok, t()} | {:error, :supported_groupings_required}
+  def new(params) do
+    case Keyword.get(params, :supported_groupings) do
+      nil ->
+        {:error, :supported_groupings_required}
+
+      sg ->
+        {:ok, %__MODULE__{supported_groupings: sg}}
+    end
+  end
+
   @impl ZWave.Command
   def params_to_binary(%__MODULE__{supported_groupings: sg}) do
-    {:ok, <<sg>>}
+    <<sg>>
   end
 
   @impl ZWave.Command

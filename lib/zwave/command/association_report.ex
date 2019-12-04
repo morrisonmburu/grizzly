@@ -36,12 +36,21 @@ defmodule ZWave.Command.AssociationReport do
 
     param(:group_identifier)
     param(:max_nodes_supported)
-    param(:reports_to_follow)
+    param(:reports_to_follow, default: 0)
     param(:node_ids, default: [])
   end
 
+  @impl true
+  @spec new([command_param]) :: {:ok, t()} | {:error, :max_nodes_supported | :group_identifier}
+  def new(params) do
+    case validate_params(params) do
+      :ok -> struct(__MODULE__, params)
+      {:error, _} = error -> error
+    end
+  end
+
   @impl ZWave.Command
-  @spec params_to_binary(t()) :: {:ok, binary()}
+  @spec params_to_binary(t()) :: binary()
   def params_to_binary(%__MODULE__{
         group_identifier: agi,
         max_nodes_supported: mns,
@@ -49,7 +58,7 @@ defmodule ZWave.Command.AssociationReport do
         node_ids: node_ids
       }) do
     node_ids_bin = :erlang.list_to_binary(node_ids)
-    {:ok, <<agi, mns, rtf>> <> node_ids_bin}
+    <<agi, mns, rtf>> <> node_ids_bin
   end
 
   @impl ZWave.Command
@@ -65,4 +74,22 @@ defmodule ZWave.Command.AssociationReport do
        node_ids: node_ids_list
      ]}
   end
+
+  defp validate_params(params) do
+    Enum.reduce(params, :ok, fn
+      _, {:error, _reason} = error ->
+        error
+
+      {_param, param_value}, ok when not is_nil(param_value) ->
+        ok
+
+      {param, nil}, _ ->
+        param_required(param)
+    end)
+  end
+
+  defp param_required(:group_identifier), do: {:error, :group_identifier_requried}
+  defp param_required(:max_nodes_supported), do: {:error, :max_nodes_supported_requried}
+  defp param_required(:node_ids), do: :ok
+  defp param_required(:reports_to_follow), do: :ok
 end

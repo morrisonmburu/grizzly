@@ -20,7 +20,8 @@ defmodule ZWave.Command.SwitchBinarySet do
   alias ZWave.ActuatorControl
   alias ZWave.ActuatorControl.DurationSet
 
-  @type command_opt :: {:target_value, SwitchBinary.target_value()} | {:duration, DurationSet.t()}
+  @type command_param ::
+          {:target_value, SwitchBinary.target_value()} | {:duration, DurationSet.t()}
 
   @type t :: %__MODULE__{
           __meta__: Meta.t(),
@@ -36,28 +37,32 @@ defmodule ZWave.Command.SwitchBinarySet do
     param(:duration)
   end
 
-  @spec params_to_binary(t()) :: {:ok, binary()}
-  def params_to_binary(%__MODULE__{target_value: value, duration: nil}) do
-    case SwitchBinary.target_value_to_byte(value) do
-      {:ok, target_value} ->
-        {:ok, <<target_value>>}
-
-      {:error, :invalid_target_value} ->
-        {:error, :encode_error}
+  @impl true
+  @spec new([command_param]) ::
+          {:ok, t()}
+          | {:error, :invalid_target_value | :invalid_duration | :target_value_required}
+  def new(params) do
+    with :ok <- validate_target_value(params),
+         :ok <- validate_duration(params) do
+      {:ok, struct(__MODULE__, params)}
     end
+  end
+
+  @impl ZWave.Command
+  @spec params_to_binary(t()) :: binary()
+  def params_to_binary(%__MODULE__{target_value: value, duration: nil}) do
+    {:ok, target_value} = SwitchBinary.target_value_to_byte(value)
+    <<target_value>>
   end
 
   def params_to_binary(%__MODULE__{target_value: value, duration: duration}) do
-    with {:ok, target_value} <- SwitchBinary.target_value_to_byte(value),
-         duration = ActuatorControl.duration_to_byte(duration) do
-      {:ok, <<target_value, duration>>}
-    else
-      _error ->
-        {:error, :encode_error}
-    end
+    {:ok, target_value} = SwitchBinary.target_value_to_byte(value)
+    duration = ActuatorControl.duration_to_byte(duration)
+    <<target_value, duration>>
   end
 
-  @spec params_from_binary(binary()) :: {:ok, [command_opt]}
+  @impl ZWave.Command
+  @spec params_from_binary(binary()) :: {:ok, [command_param]}
   def params_from_binary(<<target_value>>) do
     case SwitchBinary.target_value_from_byte(target_value) do
       {:ok, tv} ->
@@ -75,6 +80,27 @@ defmodule ZWave.Command.SwitchBinarySet do
     else
       _error ->
         {:error, :decode_error}
+    end
+  end
+
+  defp validate_target_value(params) do
+    case Keyword.get(params, :target_value) do
+      nil ->
+        {:error, :target_value_required}
+
+      target_value when target_value in 0..99 or target_value in [0xFF, :on, :off, :unknown] ->
+        :ok
+
+      _ ->
+        {:error, :invalid_target_value}
+    end
+  end
+
+  defp validate_duration(params) do
+    case Keyword.get(params, :duration) do
+      nil -> :ok
+      %DurationSet{} -> :ok
+      _ -> {:error, :invalid_duration}
     end
   end
 end

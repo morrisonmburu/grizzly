@@ -44,16 +44,32 @@ defmodule ZWave.Command.AssociationRemove do
     param(:node_ids, default: [])
   end
 
+  @impl true
+  @spec new([command_param]) :: {:ok, t()} | {:error, :group_identifier_required}
+  def new(params) do
+    case validate_group_identifier(params) do
+      :ok ->
+        {:ok, struct(__MODULE__, params)}
+
+      {:error, _} = error ->
+        error
+    end
+  end
+
   @impl ZWave.Command
-  @spec params_to_binary(t()) :: {:ok, binary()}
+  @spec params_to_binary(t()) :: binary()
   def params_to_binary(%__MODULE__{group_identifier: group_identifier, node_ids: node_ids}) do
     node_ids_bin = :erlang.list_to_binary(node_ids)
-    {:ok, <<group_identifier>> <> node_ids_bin}
+    <<group_identifier>> <> node_ids_bin
   end
 
   @impl ZWave.Command
   @spec params_from_binary(binary()) :: {:ok, [command_param]}
   def params_from_binary(<<agi, node_ids::binary>>) do
     {:ok, [group_identifier: agi, node_ids: :erlang.binary_to_list(node_ids)]}
+  end
+
+  defp validate_group_identifier(params) do
+    Keyword.get(params, :group_identifier, {:error, :group_identifier_required})
   end
 end

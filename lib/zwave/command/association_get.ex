@@ -26,10 +26,22 @@ defmodule ZWave.Command.AssociationGet do
     param(:group_identifier)
   end
 
+  @impl true
+  @spec new([command_param]) :: {:ok, t()} | {:error, :group_identifier_is_required}
+  def new(params) do
+    case Keyword.get(params, :group_identifier) do
+      nil ->
+        {:error, :group_identifier_is_required}
+
+      group_identifier ->
+        {:ok, %__MODULE__{group_identifier: group_identifier}}
+    end
+  end
+
   @impl ZWave.Command
-  @spec params_to_binary(t()) :: {:ok, binary()}
+  @spec params_to_binary(t()) :: binary()
   def params_to_binary(%__MODULE__{group_identifier: group_identifier}) do
-    {:ok, <<group_identifier>>}
+    <<group_identifier>>
   end
 
   @impl ZWave.Command
