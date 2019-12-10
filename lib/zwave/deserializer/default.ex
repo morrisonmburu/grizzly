@@ -29,6 +29,10 @@ defmodule ZWave.Deserializer.Default do
     AssociationReport,
     AssociationSet,
     AssociationSupportedGroupingsGet,
+    BasicGet,
+    BasicSet,
+    BatteryGet,
+    BatteryReport,
     SwitchBinaryGet,
     SwitchBinarySet,
     SwitchBinaryReport
@@ -42,10 +46,18 @@ defmodule ZWave.Deserializer.Default do
     end
   end
 
+  # basic
+  defp get_command(<<0x20, 0x01, _rest::binary>>), do: {:ok, %BasicSet{}}
+  defp get_command(<<0x20, 0x02, _rest::binary>>), do: {:ok, %BasicGet{}}
+
   # switch_binary
   defp get_command(<<0x25, 0x01, _rest::binary>>), do: {:ok, %SwitchBinarySet{}}
   defp get_command(<<0x25, 0x02, _rest::binary>>), do: {:ok, %SwitchBinaryGet{}}
   defp get_command(<<0x25, 0x03, _rest::binary>>), do: {:ok, %SwitchBinaryReport{}}
+
+  # battery
+  defp get_command(<<0x80, 0x02, _rest::binary>>), do: {:ok, %BatteryGet{}}
+  defp get_command(<<0x80, 0x03, _rest::binary>>), do: {:ok, %BatteryReport{}}
 
   # association
   defp get_command(<<0x85, 0x01, _rest::binary>>), do: {:ok, %AssociationSet{}}

@@ -7,6 +7,10 @@ defmodule ZWave.Command.SwitchBinaryGet do
 
   use ZWave.Command
 
+  @type t :: %__MODULE__{
+          __meta__: ZWave.Command.Meta
+        }
+
   alias ZWave.CommandClass.SwitchBinary
 
   defcommand :switch_binary_get do
