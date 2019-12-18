@@ -3,11 +3,11 @@ defmodule ZWave.Command.DoorLockOperationReport do
 
   alias ZWave.CommandClass.DoorLock
 
-  @type t :: %__MODULE__{
-    __meta__: ZWave.Command.Meta.t(),
-    docker_lock_mode: DoorLock.mode(),
-    outside_door_handles_mode: DoorLock.DoorHandleMode.t()
-  }
+  # @type t :: %__MODULE__{
+  #       __meta__: ZWave.Command.Meta.t(),
+  #      docker_lock_mode: DoorLock.mode(),
+  #     outside_door_handles_mode: DoorLock.DoorHandleMode.t()
+  #   }
 
   defcommand :door_lock_operation_report do
     command_byte(0x03)
@@ -17,8 +17,8 @@ defmodule ZWave.Command.DoorLockOperationReport do
     param(:outside_door_handles_mode)
     param(:inside_door_handles_mode)
     param(:door_condition)
-    params(:lock_timeout_minues)
-    params(:lock_timeout_seconds)
+    param(:lock_timeout_minues)
+    param(:lock_timeout_seconds)
   end
 
   def new(params) do
