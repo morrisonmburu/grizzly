@@ -2,6 +2,7 @@ defmodule Grizzly.Commands.ZIPPacketTest do
   use ExUnit.Case
 
   alias Grizzly.Commands.{ZIPPacket, SwitchBinarySet}
+  alias Grizzly.ZWaveCommand
 
   test "from binary ack response" do
     binary = <<0x23, 0x02, 0x40, 0x10, 0x10, 0x00, 0x00, 0x00>>
@@ -20,7 +21,7 @@ defmodule Grizzly.Commands.ZIPPacketTest do
   end
 
   test "make a ZIPPacket with a command" do
-    command = SwitchBinarySet.new(target_value: :off)
+    {:ok, command} = ZWaveCommand.new(%SwitchBinarySet{}, target_value: :off)
     zip_packet = ZIPPacket.with_zwave_command(command)
 
     assert command == zip_packet.command

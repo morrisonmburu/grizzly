@@ -1,7 +1,7 @@
 defmodule Grizzly.Test.Server do
   use GenServer
 
-  alias Grizzly.Test.TestProto
+  alias Grizzly.Commands.ZIPPacket
 
   def start(port) do
     GenServer.start(__MODULE__, port, name: __MODULE__)
@@ -12,38 +12,28 @@ defmodule Grizzly.Test.Server do
     {:ok, socket}
   end
 
-  def handle_info(
-        {:udp, _port, _ip, return_port, <<0x00, 0x00, 0x00, 0x00, msg::binary>>},
-        socket
-      ) do
-    case msg do
-      <<0x01, seq_number, echo_value>> ->
-        reply(socket, return_port, TestProto.echo_response(echo_value, seq_number))
-    end
+  def handle_info({:udp, _port, _ip, return_port, msg}, socket) do
+    {:ok, zip_packet} = ZIPPacket.from_binary(msg)
+
+    send_ack_response(socket, return_port, zip_packet)
 
     {:noreply, socket}
   end
 
-  # def handle_info({:udp, _port, _ip, return_port, msg}, socket) do
-  #   _ =
-  #     case handle_request(msg) do
-  #       res when is_list(res) ->
-  #         res
-  #         |> Enum.each(fn r ->
-  #           _ = reply(socket, return_port, r)
-  #           :timer.sleep(500)
-  #         end)
+  defp send_ack_response(socket, port, incoming_zip_packet) do
+    out_packet = ZIPPacket.make_ack_response(incoming_zip_packet.seq_number)
 
-  #       res ->
-  #         reply(socket, return_port, res)
-  #     end
-
-  #   {:noreply, socket}
-  # end
-
-  def reply(socket, port, msg) do
-    :gen_udp.send(socket, {0, 0, 0, 0}, port, msg)
+    :gen_udp.send(
+      socket,
+      {0, 0, 0, 0},
+      port,
+      ZIPPacket.to_binary(out_packet)
+    )
   end
+
+  # def reply(socket, port, msg) do
+  #   :gen_udp.send(socket, {0, 0, 0, 0}, port, msg)
+  # end
 
   # defp handle_request(<<0x23, 0x03, 0x80>>) do
   #   <<0x23, 0x03, 0x40>>

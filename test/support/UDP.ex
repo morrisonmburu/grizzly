@@ -17,11 +17,8 @@ defmodule Grizzly.Transport.UDP do
   end
 
   @impl true
-  def parse_response({:udp, _, _, _, <<0x00, 0x00, 0x00, 0x00, data::binary>>}) do
-    case data do
-      <<0x02, _seq_number, echo_value>> ->
-        {:ok, echo_value}
-    end
+  def parse_response({:udp, _, _, _, binary}) do
+    {:ok, binary}
   end
 
   @impl true

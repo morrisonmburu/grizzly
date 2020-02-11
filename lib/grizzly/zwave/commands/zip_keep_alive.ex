@@ -1,4 +1,4 @@
-defmodule Grizzly.Commands.ZIPKeepAlive do
+defmodule Grizzly.ZWave.Commands.ZIPKeepAlive do
   @type type :: :ack_response | :ack_request
 
   defstruct type: nil

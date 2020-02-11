@@ -11,7 +11,7 @@ defmodule Grizzly.ConnectionTest do
     :ok
   end
 
-  test "can send binary" do
+  test "can send command" do
     {:ok, command} = SwitchBinarySet.new(target_value: :off)
     assert :ok == Connection.send_command(1, command)
   end

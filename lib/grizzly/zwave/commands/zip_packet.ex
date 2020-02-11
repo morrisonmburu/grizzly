@@ -1,4 +1,4 @@
-defmodule Grizzly.Commands.ZIPPacket do
+defmodule Grizzly.ZWave.Commands.ZIPPacket do
   import Bitwise
   alias Grizzly.{ZWaveCommand, CommandDecoder}
 
@@ -18,6 +18,7 @@ defmodule Grizzly.Commands.ZIPPacket do
           | {:header_extensions, list()}
           | {:secure, boolean()}
 
+  @enforce_keys [:seq_number]
   @type t :: %__MODULE__{
           command: ZWaveCommand.t() | nil,
           flag: flag() | nil,
@@ -53,12 +54,26 @@ defmodule Grizzly.Commands.ZIPPacket do
 
     Enum.reduce(meta_map, 0, fn
       {:command, nil}, acc -> acc
-      {:command, _command}, acc -> acc &&& 0x40
-      {:secure, true}, acc -> acc &&& 0x20
+      {:command, _command}, acc -> acc ||| 0x40
+      {:secure, true}, acc -> acc ||| 0x20
       {:secure, false}, acc -> acc
       {:header_extensions, []}, acc -> acc
-      {:header_extensions, _extensions}, acc -> acc &&& 0x80
+      {:header_extensions, _extensions}, acc -> acc ||| 0x80
     end)
+  end
+
+  @spec ack_response?(t()) :: boolean()
+  def ack_response?(%__MODULE__{flag: :ack_response}), do: true
+  def ack_response?(%__MODULE__{}), do: false
+
+  @spec make_ack_response(non_neg_integer()) :: t()
+  def make_ack_response(seq_number) do
+    %__MODULE__{
+      seq_number: seq_number,
+      flag: :ack_response,
+      source: 0,
+      dest: 0
+    }
   end
 
   @spec with_zwave_command(ZWaveCommand.t(), [opt]) :: t()
@@ -86,19 +101,29 @@ defmodule Grizzly.Commands.ZIPPacket do
   def to_binary(%__MODULE__{} = zip_packet) do
     meta_byte = to_meta_byte(zip_packet)
     flag_byte = flag_to_byte(zip_packet.flag)
-    command_binary = ZWaveCommand.to_binary(zip_packet.command)
 
-    <<0x23, 0x02, flag_byte, meta_byte, zip_packet.seq_number, 0, 0, 0>> <> command_binary
+    if zip_packet.command != nil do
+      command_binary = ZWaveCommand.to_binary(zip_packet.command)
+      <<0x23, 0x02, flag_byte, meta_byte, zip_packet.seq_number, 0, 0, 0>> <> command_binary
+    else
+      <<0x23, 0x02, flag_byte, meta_byte, zip_packet.seq_number, 0, 0, 0>>
+    end
   end
 
   @spec from_binary(binary()) ::
           {:ok, t()} | {:error, :invalid_zip_packet, :flag | :missing_zwave_command}
   def from_binary(<<0x23, 0x02, flags, meta, seq_number, src, dest, rest::binary>>) do
     meta = parse_meta(meta)
-    command = parse_command(rest)
-    flag = get_flag(flags)
 
-    make_zip_packet(flag, command, meta, src, dest, seq_number)
+    case parse_command(rest) do
+      {:ok, command} ->
+        flag = get_flag(flags)
+        make_zip_packet(flag, command, meta, src, dest, seq_number)
+
+      command ->
+        flag = get_flag(flags)
+        make_zip_packet(flag, command, meta, src, dest, seq_number)
+    end
   end
 
   defp make_zip_packet(:invalid, _, _, _, _, _), do: {:error, :invalid_zip_packet, :flags}
