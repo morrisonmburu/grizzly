@@ -4,17 +4,18 @@ defmodule Grizzly.Connection do
   alias Grizzly.Connection.Server
   alias Grizzly.ZWave.Command
 
-  @type socket_opt ::
-          {:transport, module()} | {:host, :inet.ip_address()} | {:port, :inet.port_number()}
+  require Logger
+
+  @type socket_opt :: {:transport, module()} | {:port, :inet.port_number()}
 
   @type send_opt :: {:handler, module()}
 
-  @spec open(non_neg_integer(), [socket_opt]) :: :ok
+  @spec open(non_neg_integer(), [socket_opt()]) :: :ok
   def open(node_id, opts \\ []) do
     # TODO: Supervisor this!
-    {:ok, socket} = Server.start_link(node_id, opts)
+    {:ok, pid} = Server.start_link(node_id, opts)
 
-    :ok = Server.open(socket)
+    :ok = Server.open(pid)
 
     :ok
   end

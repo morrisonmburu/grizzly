@@ -1,6 +1,6 @@
 defmodule Grizzly.ZWave.Commands.ZIPPacket do
   import Bitwise
-  alias Grizzly.{ZWaveCommand, CommandDecoder}
+  alias Grizzly.ZWave.{Command, Decoder}
 
   @type flag ::
           :ack_response
@@ -20,7 +20,7 @@ defmodule Grizzly.ZWave.Commands.ZIPPacket do
 
   @enforce_keys [:seq_number]
   @type t :: %__MODULE__{
-          command: ZWaveCommand.t() | nil,
+          command: Command.t() | nil,
           flag: flag() | nil,
           seq_number: non_neg_integer(),
           source: non_neg_integer(),
@@ -76,7 +76,7 @@ defmodule Grizzly.ZWave.Commands.ZIPPacket do
     }
   end
 
-  @spec with_zwave_command(ZWaveCommand.t(), [opt]) :: t()
+  @spec with_zwave_command(Command.t(), [opt]) :: t()
   def with_zwave_command(zwave_command, opts \\ []) do
     # TODO: Add validation so we don't send invalid
     # Z/IP Packets
@@ -103,7 +103,7 @@ defmodule Grizzly.ZWave.Commands.ZIPPacket do
     flag_byte = flag_to_byte(zip_packet.flag)
 
     if zip_packet.command != nil do
-      command_binary = ZWaveCommand.to_binary(zip_packet.command)
+      command_binary = Command.to_binary(zip_packet.command)
       <<0x23, 0x02, flag_byte, meta_byte, zip_packet.seq_number, 0, 0, 0>> <> command_binary
     else
       <<0x23, 0x02, flag_byte, meta_byte, zip_packet.seq_number, 0, 0, 0>>
@@ -185,7 +185,7 @@ defmodule Grizzly.ZWave.Commands.ZIPPacket do
     if command_binary == "" do
       nil
     else
-      CommandDecoder.from_binary(command_binary)
+      Decoder.from_binary(command_binary)
     end
   end
 

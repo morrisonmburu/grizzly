@@ -1,4 +1,4 @@
-defmodule Grizzly.Commands.DefaultSet do
+defmodule Grizzly.CommandHandlers.DefaultSet do
   @behaviour Grizzly.CommandHandler
 
   @impl true

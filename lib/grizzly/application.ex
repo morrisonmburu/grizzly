@@ -5,7 +5,9 @@ defmodule Grizzly.Application do
 
   def start(_type, _args) do
     children = [
-      {Registry, [keys: :unique, name: Grizzly.ConnectionRegistry]}
+      {Registry, [keys: :duplicate, name: Grizzly.Events.Registry]},
+      {Registry, [keys: :unique, name: Grizzly.ConnectionRegistry]},
+      Grizzly.Init
     ]
 
     opts = [strategy: :one_for_one, name: Grizzly.Supervisor]

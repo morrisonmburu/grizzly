@@ -2,11 +2,10 @@ defmodule Grizzly.ConnectionTest do
   use ExUnit.Case
 
   alias Grizzly.Connection
-  alias Grizzly.Commands.SwitchBinarySet
+  alias Grizzly.ZWave.Commands.SwitchBinarySet
 
   setup do
-    socket_opts = [host: {0, 0, 0, 0}, port: 5_001, transport: Grizzly.Transport.UDP]
-    :ok = Connection.open(1, socket_opts)
+    :ok = Connection.open(1, port: 5_001, transport: GrizzlyTest.Transport.UDP)
 
     :ok
   end

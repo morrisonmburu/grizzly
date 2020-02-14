@@ -1,7 +1,5 @@
 defmodule Grizzly.Connection.Socket do
-  alias Grizzly.Commands.ZIPPacket
-  alias Grizzly.ZWaveCommand
-
+  alias Grizzly.ZWave.Commands.ZIPPacket
   alias Grizzly.CommandRunner
 
   @type t :: %__MODULE__{

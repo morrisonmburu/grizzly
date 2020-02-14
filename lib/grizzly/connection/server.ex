@@ -3,21 +3,21 @@ defmodule Grizzly.Connection.Server do
 
   use GenServer
 
-  alias Grizzly.{ConnectionRegistry, ZWaveCommand}
+  alias Grizzly.{ConnectionRegistry, CommandHandlers, ZIPGateway}
   alias Grizzly.Connection.Socket
-  alias Grizzly.CommandHandlers.Table
   alias Grizzly.ZWave.Commands.ZIPPacket
 
   alias Grizzly.CommandRunner
-
-  @type opt :: {:transport, module()} | {:host, :inet.ip_address()} | {:port, :inet.port_number()}
 
   defmodule State do
     defstruct transport: nil, host: nil, port: nil, socket: nil
   end
 
   def start_link(node_id, opts) do
+    host = ZIPGateway.host_for_node(node_id)
     name = ConnectionRegistry.via_name(node_id)
+    opts = Keyword.merge([host: host, port: ZIPGateway.port()], opts)
+
     GenServer.start_link(__MODULE__, opts, name: name)
   end
 
@@ -38,9 +38,10 @@ defmodule Grizzly.Connection.Server do
   end
 
   def init(opts) do
-    transport = Keyword.fetch!(opts, :transport)
+    transport = get_transport(opts)
     host = Keyword.fetch!(opts, :host)
     port = Keyword.fetch!(opts, :port)
+
     {:ok, %State{transport: transport, host: host, port: port}}
   end
 
@@ -55,7 +56,7 @@ defmodule Grizzly.Connection.Server do
   end
 
   def handle_call({:send, command}, from, state) do
-    case Table.lookup(command) do
+    case CommandHandlers.lookup(command) do
       {:ok, command_handler} ->
         packet = ZIPPacket.with_zwave_command(command, seq_number: 10)
         binary = ZIPPacket.to_binary(packet)
@@ -89,5 +90,15 @@ defmodule Grizzly.Connection.Server do
   def terminate(:normal, state) do
     socket = Socket.to_raw(state.socket)
     state.transport.close(socket)
+  end
+
+  def get_transport(opts) do
+    case Keyword.get(opts, :transport) do
+      nil ->
+        Application.get_env(:grizzly, :transport, GrizzlyTest.Transport.UDP)
+
+      transport ->
+        transport
+    end
   end
 end

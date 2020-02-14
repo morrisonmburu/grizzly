@@ -1,7 +1,7 @@
-defmodule Grizzly.Test.Server do
+defmodule GrizzlyTest.Server do
   use GenServer
 
-  alias Grizzly.Commands.ZIPPacket
+  alias Grizzly.ZWave.Commands.ZIPPacket
 
   def start(port) do
     GenServer.start(__MODULE__, port, name: __MODULE__)

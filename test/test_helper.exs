@@ -1,2 +1,5 @@
-{:ok, _pid} = Grizzly.Test.Server.start(5000)
+{:ok, _pid} = GrizzlyTest.Server.start(5000)
+
+GrizzlyTest.InitWaiter.start()
+
 ExUnit.start()

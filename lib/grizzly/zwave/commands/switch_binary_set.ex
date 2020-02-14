@@ -1,38 +1,44 @@
 defmodule Grizzly.ZWave.Commands.SwitchBinarySet do
-  defstruct target_value: nil, duration: nil
+  @moduledoc """
+  Module for the SWITCH_BINARY_SET command
 
+  Params:
+
+    * `:target_value` - `:on` or `:off`(required)
+    * `:duration` - 0-255 (optional)
+  """
+  @behaviour Grizzly.ZWave.Command
+
+  alias Grizzly.ZWave.Command
+
+  @type param :: {:target_value, non_neg_integer()} | {:duration, non_neg_integer()}
+
+  @impl true
   def new(opts) do
-    {:ok, struct(__MODULE__, opts)}
+    # TODO: validate opts
+    command = %Command{
+      name: :switch_binary_set,
+      command_class_byte: 0x25,
+      command_byte: 0x01,
+      params: opts,
+      impl: __MODULE__
+    }
+
+    {:ok, command}
   end
 
-  def value_to_byte(:off), do: 0x00
+  @impl true
+  def encode_param(:target_value, :off), do: 0x00
+  def encode_param(:target_value, :on), do: 0xFF
 
-  def value_from_byte(0x00), do: :off
+  def encode_param(:duration, byte), do: byte
 
-  def handle_ack(), do: :complete
+  @impl true
+  def decode_params(<<target_value>>), do: [target_value: target_value_from_byte(target_value)]
 
-  defimpl Grizzly.ZWave.ZWaveCommand do
-    alias Grizzly.ZWave.Commands.SwitchBinarySet
+  def decode_params(<<target_value, duration>>),
+    do: [target_value: target_value_from_byte(target_value), duration: duration]
 
-    def new(_command, opts) do
-      SwitchBinarySet.new(opts)
-    end
-
-    def from_binary(command, <<0x25, 0x01, tv, duration>>) do
-      tv = SwitchBinarySet.value_from_byte(tv)
-      {:ok, struct(command, target_value: tv, duration: duration)}
-    end
-
-    def from_binary(command, <<0x25, 0x01, tv>>) do
-      {:ok, struct(command, target_value: SwitchBinarySet.value_from_byte(tv))}
-    end
-
-    def to_binary(%SwitchBinarySet{target_value: tv, duration: nil}) do
-      <<0x25, 0x01, SwitchBinarySet.value_to_byte(tv)>>
-    end
-
-    def to_binary(%SwitchBinarySet{target_value: tv, duration: duration}) do
-      <<0x25, 0x01, tv, duration>>
-    end
-  end
+  defp target_value_from_byte(0x00), do: :off
+  defp target_value_from_byte(0xFF), do: :on
 end

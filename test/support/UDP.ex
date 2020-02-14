@@ -1,4 +1,4 @@
-defmodule Grizzly.Transport.UDP do
+defmodule GrizzlyTest.Transport.UDP do
   @behaviour Grizzly.Transport
 
   @test_host {0, 0, 0, 0}
